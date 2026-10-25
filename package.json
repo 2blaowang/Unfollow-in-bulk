@@ -1,0 +1,35 @@
+{
+  "name": "bilibili-unfollow-app",
+  "productName": "B站一键取关助手",
+  "version": "1.0.0",
+  "description": "Bilibili 一键取关桌面应用(Electron)",
+  "main": "main.js",
+  "author": "local",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0"
+  },
+  "dependencies": {
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "node-forge": "^1.4.0"
+  },
+  "build": {
+    "appId": "com.local.bilibili-unfollow",
+    "productName": "B站一键取关助手",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**/*"
+    ],
+    "win": {
+      "target": "nsis"
+    }
+  }
+}

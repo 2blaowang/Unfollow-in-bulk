@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src https: data:; script-src 'self'">
+  <title>批量取关</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo small">▶</span>
+      <div>
+        <div class="brand-name">批量取关</div>
+        <div class="brand-sub">哔哩哔哩 · 仅操作自己的账号</div>
+      </div>
+    </div>
+    <div id="account" class="account hidden">
+      <img id="avatar" alt="">
+      <span id="uname">—</span>
+      <button id="logoutBtn" class="link">退出</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- 1 账号 -->
+    <section class="card">
+      <div class="card-head"><span class="step">1</span><h2>账号</h2></div>
+      <div id="loginHint" class="hint">正在检查登录状态…</div>
+      <button id="loginBtn" class="btn primary hidden">登录 B 站</button>
+    </section>
+
+    <!-- 2 关注列表 -->
+    <section class="card">
+      <div class="card-head"><span class="step">2</span><h2>读取关注列表</h2></div>
+      <div class="row">
+        <button id="loadBtn" class="btn" disabled>读取关注列表</button>
+        <span id="loadStatus" class="muted"></span>
+      </div>
+      <div id="listSummary" class="summary muted hidden"></div>
+    </section>
+
+    <!-- 3 保留与速度 -->
+    <section class="card">
+      <div class="card-head"><span class="step">3</span><h2>保留与速度(可选)</h2></div>
+      <div class="grid3">
+        <label>保留昵称关键词(逗号分隔)
+          <input id="keepKeywords" placeholder="例:哔哩哔哩,官方">
+        </label>
+        <label>保留 UID(逗号分隔)
+          <input id="keepMids" placeholder="例:946974">
+        </label>
+        <label>每次取关间隔(毫秒)
+          <input id="delayMs" type="number" value="350" min="150" step="50">
+        </label>
+      </div>
+      <div id="filterSummary" class="summary muted hidden"></div>
+      <div id="preview" class="preview hidden"></div>
+    </section>
+
+    <!-- 4 执行 -->
+    <section class="card">
+      <div class="card-head"><span class="step">4</span><h2>执行取关</h2></div>
+      <div class="row">
+        <button id="startBtn" class="btn danger" disabled>开始取关</button>
+        <button id="stopBtn" class="btn" disabled>停止</button>
+        <button id="retryBtn" class="btn hidden">重试失败的 <span id="failCount">0</span> 个</button>
+      </div>
+      <div class="progress"><div id="bar" class="bar bar-pink"></div></div>
+      <div id="runStatus" class="muted">等待开始…</div>
+      <pre id="log" class="log"></pre>
+    </section>
+  </main>
+
+  <!-- 确认弹层 -->
+  <div id="confirmMask" class="mask hidden">
+    <div class="dialog">
+      <h3>确认取关</h3>
+      <p id="confirmText"></p>
+      <p class="muted">取关后无法一键恢复。请输入上方数字以确认:</p>
+      <input id="confirmInput" autocomplete="off">
+      <div class="row right">
+        <button id="confirmCancel" class="btn">取消</button>
+        <button id="confirmOk" class="btn danger" disabled>确认取关</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="common.js"></script>
+  <script src="unfollow.js"></script>
+</body>
+</html>

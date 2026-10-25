@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src https: data:; script-src 'self'">
+  <title>B 站助手 · 视频下载</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">▶</span>
+      <div>
+        <div class="brand-name">B 站助手</div>
+        <div class="brand-sub">视频下载 · 自动识别 哔哩哔哩 / 抖音</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button id="openUnfollowBtn" class="btn ghost" title="打开批量取关窗口">批量取关</button>
+      <button id="loginChipBtn" class="btn ghost small hidden">登录 B 站</button>
+      <div id="account" class="account hidden">
+        <img id="avatar" alt="">
+        <span id="uname">—</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- 视频下载(主功能) -->
+    <section class="card">
+      <div class="card-head">
+        <span class="step step-blue">▶</span><h2>视频下载</h2>
+        <span class="badge-soft">自动识别 哔哩哔哩 / 抖音 · 一个输入框全搞定</span>
+      </div>
+      <div class="row" style="align-items: flex-start">
+        <textarea id="shareInput" rows="2" class="share-input"
+                  placeholder="粘贴 B 站或抖音的分享文案 / 链接(b23.tv、v.douyin.com 短链)、BV 号 / av 号 / 视频 ID"></textarea>
+        <button id="parseBtn" class="btn primary">解析</button>
+      </div>
+      <div id="platformBadge" class="plat-badge hidden"></div>
+      <div id="parseStatus" class="muted"></div>
+      <div id="videoPanel" class="hidden">
+        <div id="vTitle" class="vtitle"></div>
+        <div id="vMeta" class="muted"></div>
+        <div id="biliOptions" class="grid2 hidden">
+          <label id="pageWrap" class="hidden">分 P<select id="pageSel"></select></label>
+          <label>清晰度<select id="qualitySel"></select></label>
+        </div>
+        <div class="row" style="margin-top:12px">
+          <button id="downloadBtn" class="btn primary" disabled>选择保存位置并下载</button>
+        </div>
+        <div class="dl-row">
+          <span class="dl-label" id="dlStage">进度</span>
+          <div class="progress slim"><div id="dlBar" class="bar bar-blue"></div></div>
+          <span id="dlPct" class="muted dl-pct">0%</span>
+        </div>
+        <div id="dlStatus" class="muted"></div>
+      </div>
+      <div class="muted" id="dlHint" style="margin-top:12px;line-height:1.7">
+        支持平台:B 站(b23.tv 短链、BV / av 号)与抖音(v.douyin.com 短链、视频链接);图集与直播暂不支持。<br>
+        提示:B 站高清画质需要登录(右上角「登录 B 站」);抖音公开视频无需登录。
+      </div>
+    </section>
+
+    <!-- 微信视频号(实验:捕获原始流直存,不解密) -->
+    <section class="card" id="wxCard">
+      <div class="card-head">
+        <span class="step step-blue">⬇</span><h2>微信视频号下载</h2>
+        <span class="badge-soft">实验 · 原始流直存,不解密</span>
+      </div>
+      <div class="muted" style="line-height:1.7">
+        步骤:① 启动捕获(首次会自动安装本地证书) ② <strong>完全退出并重新打开微信</strong> ③ 打开/切换任意视频号视频,下方自动列出捕获到的视频 ④ 点「下载」保存<strong>已解密</strong>的 MP4。<br>
+        下载前请先在微信里播放一次该视频(让页面加载完凖);若某项提示缺少 decodeKey,重新打开该视频详情页即可。
+      </div>
+      <div class="row" style="margin-top:12px">
+        <button id="wxStartBtn" class="btn primary">启动捕获</button>
+        <button id="wxStopBtn" class="btn ghost hidden">停止捕获</button>
+        <button id="wxCertBtn" class="btn ghost">安装证书</button>
+      </div>
+      <div id="wxStatus" class="muted" style="margin-top:8px;user-select:text"></div>
+      <div id="wxLog" class="wxlog"></div>
+      <div id="wxList"></div>
+    </section>
+  </main>
+
+  <script src="common.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
