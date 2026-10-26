@@ -26,6 +26,9 @@
     "files": [
       "main.js",
       "preload.js",
+      "emoji-export.js",
+      "wx-proxy.js",
+      "wxv-decrypt.js",
       "renderer/**/*"
     ],
     "win": {

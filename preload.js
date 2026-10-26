@@ -38,4 +38,15 @@ contextBridge.exposeInMainWorld('bili', {
   onWxvStatus: (cb) => ipcRenderer.on('wxv:status', (_e, s) => cb(s)),
   onWxvFeed: (cb) => ipcRenderer.on('wxv:feed', (_e, item) => cb(item)),
   downloadWxvFeed: (item, savePath) => ipcRenderer.invoke('wxv:feed-download', item, savePath),
+  /* 微信表情包导出 */
+  emojiStatus: () => ipcRenderer.invoke('emoji:status'),
+  emojiAccounts: () => ipcRenderer.invoke('emoji:accounts'),
+  emojiInstall: (mode) => ipcRenderer.invoke('emoji:install', mode),
+  emojiPickDir: () => ipcRenderer.invoke('emoji:pick-dir'),
+  emojiOpen: (p) => ipcRenderer.invoke('emoji:open', p),
+  emojiExport: (opts) => ipcRenderer.invoke('emoji:export', opts),
+  emojiStop: () => ipcRenderer.invoke('emoji:stop'),
+  onEmojiLog: (cb) => ipcRenderer.on('emoji:log', (_e, p) => cb(p && p.msg)),
+  onEmojiProgress: (cb) => ipcRenderer.on('emoji:progress', (_e, p) => cb(p)),
+  onEmojiDone: (cb) => ipcRenderer.on('emoji:done', (_e, p) => cb(p)),
 });

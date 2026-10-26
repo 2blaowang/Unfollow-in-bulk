@@ -82,6 +82,42 @@
       <div id="wxLog" class="wxlog"></div>
       <div id="wxList"></div>
     </section>
+
+    <!-- 微信表情包导出 -->
+    <section class="card" id="emojiCard">
+      <div class="card-head">
+        <span class="step step-blue">★</span><h2>表情包导出</h2>
+        <span class="badge-soft">微信收藏的表情 · 批量保存为图片</span>
+      </div>
+      <div class="muted" style="line-height:1.7">
+        把微信里收藏的全部自定义表情导出为图片文件(GIF/PNG/JPG,默认按每组 50 个分文件夹)。<br>
+        首次使用会自动下载开源导出工具 wxemoticon(约 3.7MB,来自 GitHub,下载后做哈希校验);
+        导出时工具需要读取微信进程获取数据库密钥,若杀毒软件弹提示请选择放行。已实测:无需管理员、无需退出微信。
+      </div>
+      <div id="emojiStatus" class="muted" style="margin-top:8px;user-select:text">点击「检测环境」开始。</div>
+      <div class="row" style="margin-top:12px">
+        <button id="emojiCheckBtn" class="btn primary">检测环境</button>
+        <select id="emojiAccount" class="hidden" style="max-width:240px"></select>
+        <button id="emojiPickDirBtn" class="btn ghost">选择导出目录</button>
+        <button id="emojiZipBtn" class="btn ghost small" title="自动下载失败时,从手动下载的官方 zip 安装">从本地 zip 安装</button>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <label class="check-row"><input id="emojiFlat" type="checkbox"> 不分组(全部放同一文件夹)</label>
+        <label class="check-row" title="中断后再次导出时,已下载的表情不会重复下载"><input id="emojiSkip" type="checkbox" checked> 跳过已存在(可断点续跑)</label>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button id="emojiExportBtn" class="btn primary" disabled>开始导出</button>
+        <button id="emojiStopBtn" class="btn ghost hidden">停止</button>
+        <button id="emojiOpenBtn" class="btn ghost hidden">打开导出目录</button>
+        <span id="emojiOutDir" class="muted" style="user-select:text"></span>
+      </div>
+      <div class="dl-row hidden" id="emojiProgressWrap">
+        <span class="dl-label" id="emojiStage">进度</span>
+        <div class="progress slim"><div id="emojiBar" class="bar bar-blue"></div></div>
+        <span id="emojiPct" class="muted dl-pct"></span>
+      </div>
+      <div id="emojiLog" class="wxlog"></div>
+    </section>
   </main>
 
   <script src="common.js"></script>

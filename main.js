@@ -941,6 +941,77 @@ ipcMain.handle('wxv:feed-download', async (_e, item, savePath) => {
   }
 });
 
+/* ============================================================
+ * 微信表情包导出:包装开源工具 wxemoticon(见 emoji-export.js)
+ * 从运行中的微信提取密钥 → 解密表情索引 → 从微信 CDN 下载原图
+ * ============================================================ */
+const emojiExport = require('./emoji-export');
+let emojiBusy = false;
+let emojiChild = null;
+
+ipcMain.handle('emoji:status', () => emojiExport.status());
+ipcMain.handle('emoji:accounts', () => emojiExport.listAccounts());
+ipcMain.handle('emoji:pick-dir', async () => {
+  const r = await dialog.showOpenDialog(mainWin, {
+    title: '选择导出目录',
+    properties: ['openDirectory', 'createDirectory'],
+  });
+  return r.canceled ? null : r.filePaths[0];
+});
+ipcMain.handle('emoji:open', (_e, p) => shell.openPath(String(p || '')));
+ipcMain.handle('emoji:install', async (_e, mode) => {
+  if (emojiBusy) return { ok: false, message: '有任务进行中' };
+  emojiBusy = true;
+  try {
+    if (mode === 'zip') {
+      const zip = await dialog.showOpenDialog(mainWin, {
+        title: '选择 ' + emojiExport.ZIP_NAME,
+        filters: [{ name: 'ZIP', extensions: ['zip'] }],
+        properties: ['openFile'],
+      });
+      if (zip.canceled) return { ok: false, message: '已取消' };
+      return await emojiExport.installFromZip(zip.filePaths[0], { log: (m) => sendToMain('emoji:log', { msg: m }) });
+    }
+    return await emojiExport.installTool({
+      log: (m) => sendToMain('emoji:log', { msg: m }),
+      progress: (p) => sendToMain('emoji:progress', p),
+    });
+  } finally {
+    emojiBusy = false;
+  }
+});
+ipcMain.handle('emoji:export', async (_e, opts) => {
+  if (emojiBusy) return { ok: false, message: '有任务进行中' };
+  emojiBusy = true;
+  sendToMain('emoji:progress', { stage: 'start' });
+  try {
+    const r = await emojiExport.exportStickers(opts || {}, {
+      log: (m) => sendToMain('emoji:log', { msg: m }),
+      progress: (p) => sendToMain('emoji:progress', p),
+      register: (child) => { emojiChild = child; },
+    });
+    sendToMain('emoji:done', r);
+    return r;
+  } catch (e) {
+    const r = { ok: false, message: (e && e.message) || String(e) };
+    sendToMain('emoji:done', r);
+    return r;
+  } finally {
+    emojiChild = null;
+    emojiBusy = false;
+  }
+});
+ipcMain.handle('emoji:stop', () => {
+  if (emojiChild) {
+    try { emojiChild.kill(); } catch (e) { /* ignore */ }
+    emojiChild = null;
+  }
+  emojiBusy = false;
+  sendToMain('emoji:log', { msg: '已停止' });
+  sendToMain('emoji:done', { ok: false, stopped: true, message: '已手动停止' });
+  return { ok: true };
+});
+
 app.on('before-quit', () => {
   // 退出前还原系统代理,避免残留 127.0.0.1:8899 导致断网
   try {

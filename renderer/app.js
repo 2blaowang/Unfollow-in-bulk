@@ -371,3 +371,188 @@ window.bili.onDlProgress(({ key, received, total }) => {
   if (wxFeedMsg[id] !== msg) { wxFeedMsg[id] = msg; renderWxFeeds(); }
 });
 refreshWxStatus();
+
+/* ============================================================
+ * 微信表情包导出
+ * ============================================================ */
+const emojiState = { ready: false, wxid: '', outDir: '', running: false };
+
+function emojiLog(line) {
+  const el = $('emojiLog');
+  const time = new Date().toTimeString().slice(0, 8);
+  el.textContent += `[${time}] ${line}\n`;
+  const lines = el.textContent.split('\n');
+  if (lines.length > 400) el.textContent = lines.slice(-260).join('\n');
+  el.scrollTop = el.scrollHeight;
+}
+
+function emojiStatusText(html) {
+  $('emojiStatus').innerHTML = html;
+}
+
+function emojiSetBar(stage, done, total) {
+  const wrap = $('emojiProgressWrap');
+  if (!stage) { wrap.classList.add('hidden'); return; }
+  wrap.classList.remove('hidden');
+  if (stage === 'download') {
+    const pct = total ? Math.min(99, Math.round((done / total) * 100)) : 0;
+    $('emojiStage').textContent = '下载工具';
+    $('emojiBar').style.width = pct + '%';
+    $('emojiPct').textContent = pct + '%';
+  } else if (stage === 'list') {
+    $('emojiStage').textContent = '解析表情';
+    $('emojiBar').style.width = '4%';
+    $('emojiPct').textContent = total ? total + ' 个' : '';
+  } else if (stage === 'export') {
+    const pct = total ? Math.min(99, Math.round((done / total) * 100)) : 0;
+    $('emojiStage').textContent = '导出中';
+    $('emojiBar').style.width = Math.max(4, pct) + '%';
+    $('emojiPct').textContent = total ? `${done}/${total}` : done + ' 个';
+  } else if (stage === 'done') {
+    $('emojiBar').style.width = '100%';
+    $('emojiPct').textContent = '';
+  }
+}
+
+function emojiSetRunning(run) {
+  emojiState.running = run;
+  $('emojiExportBtn').disabled = run || !emojiState.ready;
+  $('emojiCheckBtn').disabled = run;
+  $('emojiStopBtn').classList.toggle('hidden', !run);
+}
+
+async function emojiCheck() {
+  emojiStatusText('正在检测…');
+  try {
+    const st = await window.bili.emojiStatus();
+    if (!st.tool || !st.tool.found) {
+      emojiState.ready = false;
+      emojiStatusText('未安装导出工具,正在自动下载 wxemoticon(约 3.7MB,GitHub 直连可能较慢)…');
+      emojiLog('未找到 wxemoticon,开始自动下载安装…');
+      const r = await window.bili.emojiInstall('auto');
+      if (!r || !r.ok) {
+        emojiStatusText('自动安装失败:' + esc((r && r.message) || '') + '<br>可手动下载 zip 后点「从本地 zip 安装」。');
+        emojiLog('自动安装失败:' + ((r && r.message) || ''));
+        return;
+      }
+      emojiState.ready = true;
+    } else {
+      emojiState.ready = true;
+      emojiLog('找到 wxemoticon ' + st.tool.version + ' @ ' + st.tool.path);
+    }
+    const acc = await window.bili.emojiAccounts();
+    const sel = $('emojiAccount');
+    sel.innerHTML = '';
+    if (acc && acc.ok && acc.accounts && acc.accounts.length) {
+      for (const id of acc.accounts) {
+        const opt = document.createElement('option');
+        opt.value = id;
+        opt.textContent = id;
+        sel.appendChild(opt);
+      }
+      sel.classList.toggle('hidden', acc.accounts.length < 2);
+      emojiState.wxid = acc.accounts.length === 1 ? acc.accounts[0] : sel.value;
+    } else {
+      sel.classList.add('hidden');
+      emojiState.wxid = '';
+      emojiLog('未检测到微信账号数据(xwechat_files),请确认微信在本机登录过');
+    }
+    const ver = await window.bili.emojiStatus();
+    emojiStatusText(
+      `<span style="color:#1db954">就绪:</span>wxemoticon ${esc(ver.tool.version)} · 账号 ${acc && acc.accounts ? acc.accounts.length : 0} 个` +
+      `<br>默认导出到系统「下载」文件夹;也可点「选择导出目录」指定。`
+    );
+    $('emojiExportBtn').disabled = emojiState.running;
+  } catch (e) {
+    emojiState.ready = false;
+    emojiStatusText('检测失败:' + esc((e && e.message) || e));
+    emojiLog('检测失败:' + ((e && e.message) || e));
+  }
+}
+
+$('emojiCheckBtn').addEventListener('click', emojiCheck);
+
+$('emojiZipBtn').addEventListener('click', async () => {
+  emojiLog('选择手动下载的 wxemoticon-x86_64-windows.zip…');
+  const r = await window.bili.emojiInstall('zip');
+  if (r && r.ok) {
+    emojiState.ready = true;
+    emojiStatusText(`<span style="color:#1db954">就绪:</span>wxemoticon ${esc(r.version)}(本地安装)`);
+  } else {
+    emojiLog('本地安装失败:' + ((r && r.message) || ''));
+  }
+});
+
+$('emojiAccount').addEventListener('change', () => {
+  emojiState.wxid = $('emojiAccount').value;
+});
+
+$('emojiPickDirBtn').addEventListener('click', async () => {
+  const dir = await window.bili.emojiPickDir();
+  if (dir) {
+    emojiState.outDir = dir;
+    $('emojiOutDir').textContent = '导出到:' + dir;
+  }
+});
+
+$('emojiExportBtn').addEventListener('click', async () => {
+  if (emojiState.running || !emojiState.ready) return;
+  emojiSetRunning(true);
+  emojiSetBar('list', 0, 0);
+  emojiLog('开始导出…(首次需要从微信读取数据库密钥,约几秒到几十秒)');
+  try {
+    const r = await window.bili.emojiExport({
+      wxid: emojiState.wxid || undefined,
+      outDir: emojiState.outDir || undefined,
+      flat: $('emojiFlat').checked,
+    });
+    if (r && r.ok) {
+      emojiSetBar('done');
+      emojiStatusText('✅ ' + esc(r.message || '完成'));
+      if (r.outDir) {
+        emojiState.lastDir = r.outDir;
+        $('emojiOutDir').textContent = '导出到:' + r.outDir;
+        $('emojiOpenBtn').classList.remove('hidden');
+      }
+    } else if (r && r.stopped) {
+      emojiSetBar(null);
+      emojiStatusText('已停止。再次导出会自动跳过已下载的表情。');
+    } else {
+      emojiSetBar(null);
+      emojiStatusText('❌ ' + esc((r && r.message) || '导出失败'));
+    }
+  } catch (e) {
+    emojiSetBar(null);
+    emojiStatusText('❌ 异常:' + esc((e && e.message) || e));
+    emojiLog('异常:' + ((e && e.message) || e));
+  } finally {
+    emojiSetRunning(false);
+  }
+});
+
+$('emojiStopBtn').addEventListener('click', () => {
+  emojiLog('正在停止…');
+  window.bili.emojiStop();
+});
+
+$('emojiOpenBtn').addEventListener('click', () => {
+  const dir = emojiState.lastDir || emojiState.outDir;
+  if (dir) window.bili.emojiOpen(dir);
+});
+
+window.bili.onEmojiLog((line) => emojiLog(line));
+window.bili.onEmojiProgress((p) => {
+  if (p && p.stage) emojiSetBar(p.stage, p.done || p.received, p.total);
+});
+window.bili.onEmojiDone((r) => {
+  if (r && r.ok) {
+    emojiSetBar('done');
+    emojiStatusText('✅ ' + esc(r.message || '完成'));
+    if (r.outDir) {
+      emojiState.lastDir = r.outDir;
+      $('emojiOpenBtn').classList.remove('hidden');
+    }
+  }
+  emojiSetRunning(false);
+});
+
